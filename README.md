@@ -1,8 +1,3 @@
----
-marp: true
-class: invert
----
-
 # ECON 409 Project Proposal
 
 *Idalee Vargas, Lora Yovcheva, Mauricio Vargas, Santiago Naranjo*
