@@ -237,18 +237,18 @@ $$
 \mathbb{E}[\Delta \ln Y_t] = \alpha_0
 $$
 
-We estimate the drift $\alpha_0$ of $\bar{y}_t$ as:
+We estimate the drift $\alpha_0$ of $\bar{y}_{t-1}$ as:
 
 $$
-\hat{\alpha}_0 = \frac{1}{h} \sum_{i = t - h}^{t} \Delta \ln Y_i
+\hat{\alpha}_0 = \frac{1}{h} \sum_{i = t - 1 - h}^{t - 1} \Delta \ln Y_i
 $$
 
 $h$ is the previously mentioned second tuning parameter.
 
 ---
 
-Similarly, for $\tilde{y}_t$:
+Similarly, for $\tilde{y}_{t-2}$:
 
 $$
-\hat{\gamma}_0 = \frac{1}{h} \sum_{i = t - h}^{t} \Delta \ln \tilde{Y}_i
+\hat{\gamma}_0 = \frac{1}{h} \sum_{i = t - 2 - h}^{t - 2} \Delta \ln \tilde{Y}_i
 $$
