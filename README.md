@@ -1,3 +1,8 @@
+---
+marp: true
+class: invert
+---
+
 # ECON 409 Project Proposal
 
 *Idalee Vargas, Lora Yovcheva, Mauricio Vargas, Santiago Naranjo*
@@ -15,9 +20,11 @@ $$
     \quad
     \epsilon_t \sim_{i.i.d.} N(0, \sigma^2)
 $$
+
 $$
 \Delta s_{t+1} = s_{t+1} - s_t
 $$
+
 $$
 s_t = \ln{S_t}
 $$
@@ -37,11 +44,13 @@ The output gaps are determined through:
 $$
 \ln Y_t = y_t + \bar{y}_t
 $$
+
 $$ 
 \bar{y}_t = \alpha_0 + \bar{y}_{t-1} + \nu_t,
 \quad
 \nu_t \sim_{i.i.d.} N(0, \sigma^2_{\nu})
 $$
+
 $$
 y_t = \alpha_1 y_{t-1} + \eta_t,
 \quad
@@ -57,11 +66,13 @@ For the UK output gap, we have:
 $$
 \ln \tilde{Y}_t = \tilde{y}_t + \bar{\tilde{y}}_t
 $$
+
 $$ 
 \bar{\tilde{y}}_t = \gamma_0 + \bar{\tilde{y}}_{t-1} + \tilde{\nu}_t,
 \quad
 \tilde{\nu}_t \sim_{i.i.d.} N(0, \sigma^2_{\tilde{\nu}})
 $$
+
 $$
 \tilde{y}_t = \gamma_1 \tilde{y}_{t-1} + \tilde{\eta}_t, 
 \quad
@@ -95,9 +106,11 @@ $$
     \beta_2(\mathbb{E}_{t-1}[\tilde{y}_t] - y_t) +
     \epsilon_t
 $$
+
 $$
 \Delta s_{t+1} = s_{t+1} - s_t
 $$
+
 $$
 s_t = \ln{S_t}
 $$
@@ -151,9 +164,11 @@ Knowing $y_t$ is $I(0)$:
 $$
 \Delta y_t = y_t - y_{t-1}
 $$
+
 $$
 \mathbb{E}[\Delta y_t] = \mathbb{E}[y_t - y_{t-1}]
 $$
+
 $$
 \mathbb{E}[\Delta y_t] = 0
 $$
@@ -170,6 +185,7 @@ For $\Delta \bar{y}_t$:
 $$
 \Delta \bar{y}_t = \bar{y}_t - \bar{y}_{t-1} 
 $$
+
 $$
 \Delta \bar{y}_t = \alpha_0 + \bar{y}_{t-1} + \nu_{t-1} - \bar{y}_{t-1} 
 $$
@@ -181,6 +197,7 @@ $$
 \mathbb{E}[\nu_{t-1}] - 
 \mathbb{E}[\bar{y}_{t-1}] 
 $$
+
 $$
 \mathbb{E}[\Delta \bar{y}_t] = \alpha_0
 $$
