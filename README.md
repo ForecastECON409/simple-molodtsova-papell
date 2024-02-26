@@ -1,6 +1,7 @@
 ---
 marp: true
 class: invert
+math: mathjax
 ---
 
 # ECON 409 Project Proposal
@@ -13,12 +14,7 @@ class: invert
 As suggested by Molodtsova and Papell, the model is outlined as follows:
 
 $$
-\Delta s_{t+1} = \beta_0 + 
-    \beta_1(\tilde{\pi}_t - \pi_t) +
-    \beta_2(\tilde{y}_t - y_t) +
-    \epsilon_t, 
-    \quad
-    \epsilon_t \sim_{i.i.d.} N(0, \sigma^2)
+\Delta s_{t+1} = \beta_0 + \beta_1(\tilde{\pi}_t - \pi_t) + \beta_2(\tilde{y}_t - y_t) + \epsilon_t, \quad \epsilon_t \sim_{i.i.d.} N(0, \sigma^2)
 $$
 
 $$
@@ -46,15 +42,11 @@ $$
 $$
 
 $$ 
-\bar{y}_t = \alpha_0 + \bar{y}_{t-1} + \nu_t,
-\quad
-\nu_t \sim_{i.i.d.} N(0, \sigma^2_{\nu})
+\bar{y}_t = \alpha_0 + \bar{y}_{t-1} + \nu_t, \quad \nu_t \sim_{i.i.d.} N(0, \sigma^2_{\nu})
 $$
 
 $$
-y_t = \alpha_1 y_{t-1} + \eta_t,
-\quad
-\eta_t \sim_{i.i.d.} N(0, \sigma^2_{\eta})
+y_t = \alpha_1 y_{t-1} + \eta_t, \quad \eta_t \sim_{i.i.d.} N(0, \sigma^2_{\eta})
 $$
 
 Introducing a stochastic trend for potential output and an autoregressive model for the output gap. It assumes that $\ln Y_t$ and $\bar{y}_t$ are I(1) variables, and $y_t$ is I(0).
@@ -68,15 +60,11 @@ $$
 $$
 
 $$ 
-\bar{\tilde{y}}_t = \gamma_0 + \bar{\tilde{y}}_{t-1} + \tilde{\nu}_t,
-\quad
-\tilde{\nu}_t \sim_{i.i.d.} N(0, \sigma^2_{\tilde{\nu}})
+\bar{\tilde{y}}_t = \gamma_0 + \bar{\tilde{y}}_{t-1} + \tilde{\nu}_t, \quad \tilde{\nu}_t \sim_{i.i.d.} N(0, \sigma^2_{\tilde{\nu}})
 $$
 
 $$
-\tilde{y}_t = \gamma_1 \tilde{y}_{t-1} + \tilde{\eta}_t, 
-\quad
-\tilde{\eta}_t \sim_{i.i.d.} N(0, \sigma^2_{\tilde{\eta}})
+\tilde{y}_t = \gamma_1 \tilde{y}_{t-1} + \tilde{\eta}_t, \quad \tilde{\eta}_t \sim_{i.i.d.} N(0, \sigma^2_{\tilde{\eta}})
 $$
 
 This approach assumes $\ln \tilde{Y}_t$ and $\bar{\tilde{y}}_t$ are I(1) variables and $\tilde{y}_t$ is I(0).
@@ -101,10 +89,7 @@ The publication lag for these variables does not hinder the strategy's applicati
 Given the two-month delay in publishing $\tilde{Y}_t$, we propose an adjustment to the model:
 
 $$
-\Delta s_{t+1} = \beta_0 + 
-    \beta_1(\tilde{\pi}_t - \pi_t) +
-    \beta_2(\mathbb{E}_{t-1}[\tilde{y}_t] - y_t) +
-    \epsilon_t
+\Delta s_{t+1} = \beta_0 + \beta_1(\tilde{\pi}_t - \pi_t) + \beta_2(\mathbb{E}_{t-1}[\tilde{y}_t] - y_t) + \epsilon_t
 $$
 
 $$
@@ -128,18 +113,13 @@ $$
 We define the loss function as:
 
 $$
-L(\widehat{\Delta s}_{
-
-t+1} \vert \beta_0, \beta_1, \beta_2) = 
-    MSE(\widehat{\Delta s}_{t+1}) + 
-    \lambda \sum_{i = 0}^{2} \beta_i^2
+L(\widehat{\Delta s}_{t+1} \vert \beta_0, \beta_1, \beta_2) = MSE(\widehat{\Delta s}_{t+1}) + \lambda \sum_{i = 0}^{2} \beta_i^2
 $$
 
 where:
 
 $$
-\beta^* = (\beta^*_0, \beta^*_1, \beta^*_2)' = 
-\text{arg min}_{\beta \in \mathbb{R}^3} L(\widehat{\Delta s}_{t+1} \vert \beta)
+\beta^* = (\beta^*_0, \beta^*_1, \beta^*_2)' = \text{arg min}_{\beta \in \mathbb{R}^3} L(\widehat{\Delta s}_{t+1} \vert \beta)
 $$
 
 ---
@@ -191,11 +171,7 @@ $$
 $$
 
 $$
-\mathbb{E}[\Delta \bar{y}_t] = 
-\alpha_0 +
-\mathbb{E}[\bar{y}_{t-1}] + 
-\mathbb{E}[\nu_{t-1}] - 
-\mathbb{E}[\bar{y}_{t-1}] 
+\mathbb{E}[\Delta \bar{y}_t] = \alpha_0 + \mathbb{E}[\bar{y}_{t-1}] + \mathbb{E}[\nu_{t-1}] - \mathbb{E}[\bar{y}_{t-1}] 
 $$
 
 $$
@@ -207,9 +183,7 @@ $$
 Thus:
 
 $$
-\mathbb{E}[\Delta \ln Y_t] =  
-\mathbb{E}[\Delta y_t] +  
-\mathbb{E}[\Delta \bar{y}_t]
+\mathbb{E}[\Delta \ln Y_t] =  \mathbb{E}[\Delta y_t] + \mathbb{E}[\Delta \bar{y}_t]
 $$
 
 $$
