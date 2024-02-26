@@ -88,16 +88,30 @@ The model utilizes monthly data, with updates occurring on the last business day
 
 ---
 
-The publication lag for these variables does not hinder the strategy's application, as the prediction for $\Delta s_{t+1}$ relies on data available up to month $t$.
+Given the inherent lags within the data, we propose the following autoregressive models for inflation rates, treating them as random walks:
+
+$$
+\pi_t = \pi_{t-1} + e^\pi_t,
+\quad
+e^\pi_t \sim_{i.i.d.} N(0, \sigma^2_{e^\pi})
+$$
+
+$$
+\tilde{\pi}_t = \tilde{\pi}_{t-1} + e^\tilde{\pi}_t,
+\quad
+e^\tilde{\pi}_t \sim_{i.i.d.} N(0, \sigma^2_{e^\tilde{\pi}})
+$$
+
+Both models encapsulate the stochastic nature of inflation rates in their respective economies.
 
 ---
 
-Given the two-month delay in publishing $\tilde{Y}_t$, we propose an adjustment to the model:
+To account for the delays in data availability, we adjust our original exchange rate model as follows:
 
 $$
 \Delta s_{t+1} = \beta_0 + 
-    \beta_1(\tilde{\pi}_t - \pi_t) +
-    \beta_2(\mathbb{E}_{t-1}[\tilde{y}_t] - y_t) +
+    \beta_1(\mathbb{E}_{t-1}[\tilde{\pi}_t] - \mathbb{E}_{t-1}[\pi_t]) +
+    \beta_2(\mathbb{E}_{t-2}[\tilde{y}_t] - \mathbb{E}_{t-1}[y_t]) +
     \epsilon_t
 $$
 $$
@@ -107,10 +121,29 @@ $$
 s_t = \ln{S_t}
 $$
 
-Predicting the UK output gap with:
+The expectations are determined based on the information available at time $t-1$ and $t-2$:
+$$
+\mathbb{E}_{t-1}[\pi_t] = \pi_{t-1}
+$$
+$$
+\mathbb{E}_{t-1}[\tilde{\pi}_t] = \tilde{\pi}_{t-1}
+$$
+$$
+\mathbb{E}_{t-1}[y_t] = \alpha_1 y_{t-1}
+$$
+$$
+\mathbb{E}_{t-2}[\tilde{y}_t] = \gamma_1^2 \tilde{y}_{t-2}
+$$
+
+---
+
+Integrating these expectations, the revised model becomes:
 
 $$
-\mathbb{E}_{t-1}[{\tilde{y}_t}] = \gamma_1 \tilde{y}_{t-1}
+\Delta s_{t+1} = \beta_0 + 
+    \beta_1(\tilde{\pi}_{t-1} - \pi_{t-1}) +
+    \beta_2(\gamma_1^2 \tilde{y}_{t-2} - \alpha_1 y_{t-1}) +
+    \epsilon_t
 $$
 
 ---
