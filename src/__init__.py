@@ -4,6 +4,12 @@ import pandas as pd
 import toolz as tz
 import numpy as np
 import statsmodels.tsa.api as tsa
+
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Ridge
+from sklearn.pipeline import Pipeline
+from typing import Tuple
 # %%
 def pi_nowcast_(pi: pd.Series, steps: int) -> pd.Series:
     """
@@ -186,3 +192,51 @@ def y_transform_(y: pd.Series) -> pd.Series:
         lambda x: x.shift(-1),
     )
     return transformed_y
+# %%
+def fit_model_(X: pd.DataFrame, y: pd.Series, alpha: float) -> Tuple[float, Pipeline]:
+    """
+    Fits the simple Papell model to the data and returns the Akaike Information Criterion (AIC) value
+    along with the fitted pipeline.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        The explanatory variables as a pandas DataFrame.
+    y : pd.Series
+        The dependent variable as a pandas Series.
+    alpha : float
+        The regularization strength to be used by the Ridge regression model.
+
+    Returns
+    -------
+    Tuple[float, Pipeline]
+        A tuple containing the AIC value of the fitted model and the fitted Pipeline object.
+        The Pipeline consists of a standard scaler followed by a Ridge regression model with the specified alpha.
+
+    Notes
+    -----
+    The Akaike Information Criterion (AIC) is calculated using the formula:
+    
+    .. math::
+        \text{AIC} = 2k + n\log(\hat{\sigma}^2)
+    
+    where :math:`k` is the number of estimated parameters in the model, :math:`n` is the number of observations,
+    and :math:`\hat{\sigma}^2` is the estimated variance of the residuals. This criterion provides a measure of
+    the quality of the model, taking into account the goodness of fit and the complexity of the model.
+    """
+    
+    papell_pipe = Pipeline([
+        ('scaler', StandardScaler()),
+        ('ridge', Ridge(alpha=alpha))
+    ])
+    
+    papell_pipe.fit(X, y)
+    
+    n_obs = len(y)
+    k = len(papell_pipe.named_steps['ridge'].coef_)
+    y_fitted = papell_pipe.predict(X)
+    residuals = y - y_fitted
+    sigma_squared = (residuals ** 2).mean()
+    aic = (2 * k) + (n_obs * np.log(sigma_squared))
+    
+    return aic, papell_pipe
