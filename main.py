@@ -22,16 +22,50 @@ Para un conjunto de parámetros $(h, \lambda)$:
     - Nowcasting $\mathbb{E}_{t-2}[\tilde{y}_{t}]$.
 """
 # %%
-def pi_nowcast_(pi):
+import matplotlib.pyplot as plt
+import pandas as pd
+import toolz as tz
+import numpy as np
+import statsmodels.tsa.api as tsa
+# %%
+def pi_nowcast_(pi: pd.Series, steps) -> pd.Series:
     # Order `pi` from the oldest to the most recent observation.
     pi = pi.sort_index()
-    return pi.shift(1)
+    return pi.shift(steps)
 # %%
-def pi_tilde_nowcast_(pi_tilde):
-    # Order `pi` from the oldest to the most recent observation.
-    pi_tilde = pi_tilde.sort_index()
-    return pi_tilde.shift(1)
+def y_pot_drift_(y: pd.Series) -> float:
+    y = tz.pipe(y,
+        lambda x: x.sort_index(),
+        lambda x: np.log(x),
+    )
+    
+    drift = tz.pipe(y,
+        lambda x: x.diff(),
+        lambda x: x.mean()
+    )
+    return drift 
 # %%
-def y_pot_drift_(y, h):
-    y = y.sort_index()
-    pass
+def y_gap_(y: pd.Series, h: int) -> pd.Series:
+    gap = tz.pipe(y,
+        lambda x: x.sort_index(),
+        lambda x: np.log(x),
+        lambda x: pd.DataFrame(x),
+        lambda x: x.assign(drift=x.rolling(h).apply(y_pot_drift_)),
+        lambda x: x.assign(gap=x.iloc[:, 0].diff() - x.drift),
+        lambda x: x.gap
+    )
+    return gap
+# %%
+def gap_nowcast_(gap: pd.Series, steps=1) -> pd.Series:
+    gap = gap.sort_index()
+    
+    ar1 = tsa.arima.ARIMA(gap.dropna(), order=(1, 0, 0)).fit()
+    
+    ar1_nowcast = ar1.forecast(steps)
+    
+    gap_nowcast = tz.pipe(gap,
+        lambda x: x.combine_first(ar1_nowcast)
+    )
+    return gap_nowcast 
+# %%
+data = pd.read_csv('data/processed_data.csv', index_col=0, parse_dates=True)
