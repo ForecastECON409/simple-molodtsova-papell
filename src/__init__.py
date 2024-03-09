@@ -91,28 +91,33 @@ def y_pot_drift_(y: pd.Series) -> pd.Series:
 # %%
 def y_gap_(y: pd.Series) -> pd.Series:
     """
-    Estimates the gap of a pd.Series according to the following model:
-
-    .. math::
-        y_t = \Delta \log Y_t - \text{\alpha}_0
-
-    This model assumes that :math:`y_{t-1} = 0` and that :math:`\Delta \bar{y}_t = \alpha_0`.
+    Estimates the gap for a pd.Series based on the model where the gap is the difference between the first
+    difference of the logarithm of the series and its drift, scaled by 100 for percentage representation.
 
     Parameters
     ----------
     y : pd.Series
-        A pandas Series object containing the data from which the gap is estimated.
+        A pandas Series object containing the data from which the gap is to be estimated.
 
     Returns
     -------
     pd.Series
-        A pandas Series containing the estimated gap for each period in the input series.
+        A pandas Series containing the estimated gap for each period in the input series, multiplied by 100
+        to convert the gap into a percentage form.
 
     Notes
     -----
-    The gap is calculated as the difference between the first difference of the logarithm of the series
-    and the drift (:math:`\alpha_0`). This reflects the deviation of the actual change in the series from
-    the expected change, assuming the initial gap is zero.
+    The gap calculation involves the following steps:
+    1. Sorting the input series `y` by its index to ensure chronological order.
+    2. Converting `y` to a DataFrame for easier manipulation.
+    3. Calculating the logarithm of `y`, storing it as `log_y`.
+    4. Calculating the drift of the stochastic trend in `y`, denoted as `alpha_0`, using a separate function.
+    5. Computing the first difference of `log_y` to get the change in logarithmic values.
+    6. Subtracting the drift from the first difference of `log_y` to estimate the gap.
+    7. Multiplying the gap by 100 to represent it in percentage terms.
+
+    This process yields the estimated gap as a measure of deviation from the expected change in the series,
+    assuming an initial gap of zero. The result is a series of gap estimates for each time period in the input series.
     """
     gap = tz.pipe(y,
         lambda x: x.sort_index(),
@@ -122,45 +127,39 @@ def y_gap_(y: pd.Series) -> pd.Series:
         lambda x: x.assign(gap=x.log_y.diff() - x.drift),
         lambda x: x.gap
     )
-    #gap = tz.pipe(y,
-        #lambda x: x.sort_index(),
-        #lambda x: pd.DataFrame(x),
-        #lambda x: x.assign(log_y=np.log(x.iloc[:,0])),
-        #lambda x: x.assign(drift=y_pot_drift_(x.iloc[:,0])),
-        #lambda x: x.assign(cum_drift=x.drift.cumsum()),
-        #lambda x: x.assign(y_pot=x.log_y.iloc[0] + x.cum_drift),
-        #lambda x: x.assign(gap=x.log_y - x.y_pot),
-        #lambda x: x.gap * 100
-    #)
     return gap * 100
+
 # %%
 def gap_nowcast_(y: pd.Series, steps: int = 1, freq = 'M') -> pd.Series:
     """
-    Calculates the nowcast for `steps` periods of the gap from a pd.Series,
-    according to an AR(1) model's coefficient applied directly to the gap.
+    Projects the gap of a pd.Series forward for a specified number of periods using the coefficient
+    from an AR(1) model fitted to the existing gap data. The projection assumes that the gap's evolution
+    follows an AR(1) process, using the AR(1) coefficient to estimate future gap values.
 
     Parameters
     ----------
     y : pd.Series
-        A pandas Series object containing the data from which the gap is to be estimated.
+        The input time series data from which the gap is estimated.
     steps : int, optional
-        The number of periods ahead for which the nowcast is generated. The default is 1.
+        The number of future periods to project the gap for. Defaults to 1.
+    freq : str, optional
+        The frequency of the time series data, used for creating a DateTimeIndex when fitting the AR(1) model.
+        Defaults to 'M' (monthly).
 
     Returns
     -------
     pd.Series
-        A pandas Series containing the nowcasted gap values for the specified number of steps.
-        This approach applies the AR(1) model's coefficient in a direct multiplication to estimate
-        the future gap values, with the assumption that the gap persists according to the AR(1)
-        process over the specified number of steps.
+        A series containing the projected gap values for the specified number of future periods. The projection
+        is based on applying the AR(1) model's coefficient directly to the last observed gap values, effectively
+        extending the gap series forward while assuming the dynamic captured by the AR(1) process remains constant.
 
     Notes
     -----
-    Unlike traditional forecasting methods that predict future values based on a model fit,
-    this function calculates the nowcast by applying the AR(1) model's coefficient to the
-    last observed gap. This method assumes that the relationship captured by the AR(1) coefficient
-    continues to hold over the forecast period. The gap is first estimated from the series, and
-    then the AR(1) coefficient is used to project this gap forward for the specified number of steps.
+    This method of nowcasting is distinct from traditional forecasting approaches that may use the model to generate
+    new future values. Instead, it leverages the AR(1) model's insight into the data's temporal correlation structure,
+    specifically the autoregressive nature of the gap, to project existing patterns into the near future. This is
+    particularly useful for nowcasting, where the goal is to estimate current or very near-term values with minimal
+    delay and maximum reliance on the most recent observations.
     """
     y = y.sort_index()
     gap = y_gap_(y)
@@ -178,28 +177,29 @@ def gap_nowcast_(y: pd.Series, steps: int = 1, freq = 'M') -> pd.Series:
 # %%
 def y_transform_(y: pd.Series) -> pd.Series:
     """
-    Transforms the pd.Series `y` into :math:`t` to generate:
-
-    .. math::
-        \Delta \log Y_{t+1}
+    Applies a transformation to a pd.Series to compute the expected change in the logarithm of the series
+    values for the next period (:math:`\Delta \log Y_{t+1}`), multiplied by 100 for percentage representation.
 
     Parameters
     ----------
     y : pd.Series
-        A pandas Series object containing the data to be transformed.
+        The input time series data to be transformed.
 
     Returns
     -------
     pd.Series
-        A pandas Series containing the transformed values, specifically the difference of the logarithm
-        of `y` shifted by one period to represent :math:`\Delta \log Y_{t+1}`.
+        A pandas Series containing the transformed values, representing the percentage change in the logarithm
+        of `y` for the next period. The transformation includes taking the natural logarithm of `y`, computing
+        the first difference to find the logarithmic change, and shifting the result by one period to align
+        with :math:`t+1`. The final values are scaled by 100.
 
     Notes
     -----
-    This function applies a log transformation to the series, computes the first difference to capture
-    the change in the log values, and then shifts the resulting series by one period to align the change
-    to period :math:`t+1`. This transformation is useful for modeling changes in the logarithmic scale of
-    the data over time.
+    This transformation is designed to facilitate the analysis of time series data by focusing on the percentage
+    change in logarithmic terms, which is often more interpretable for economic and financial data. The shift
+    operation prepares the data for forecasting or nowcasting applications by aligning the change with the future
+    period it predicts. Multiplying by 100 converts the log difference to a percentage change, making the output
+    more intuitive to interpret.
     """
     y = y.sort_index()  # Ensure the series is sorted by index before transformation
     transformed_y = tz.pipe(y,
@@ -211,34 +211,35 @@ def y_transform_(y: pd.Series) -> pd.Series:
 # %%
 def fit_model_(X: pd.DataFrame, y: pd.Series, alpha: float, bootstrap:False, n_boot=10_000) -> Tuple[float, Pipeline]:
     """
-    Fits the simple Papell model to the data and returns the Akaike Information Criterion (AIC) value
-    along with the fitted pipeline.
+    Fits a Ridge regression model to the data, optionally applying bootstrap for error estimation,
+    and calculates the Akaike Information Criterion (AIC) for model evaluation.
 
     Parameters
     ----------
     X : pd.DataFrame
-        The explanatory variables as a pandas DataFrame.
+        The explanatory variables.
     y : pd.Series
-        The dependent variable as a pandas Series.
+        The dependent variable.
     alpha : float
-        The regularization strength to be used by the Ridge regression model.
+        The regularization strength for the Ridge regression model.
+    bootstrap : bool, optional
+        If True, applies bootstrap to estimate the error variance. Default is False.
+    n_boot : int, optional
+        The number of bootstrap samples to use if bootstrap is True. Default is 10,000.
 
     Returns
     -------
     Tuple[float, Pipeline]
-        A tuple containing the AIC value of the fitted model and the fitted Pipeline object.
-        The Pipeline consists of a standard scaler followed by a Ridge regression model with the specified alpha.
+        The AIC value of the fitted model and the fitted pipeline, which includes a standard scaler
+        and a Ridge regression model with the specified alpha.
 
     Notes
     -----
-    The Akaike Information Criterion (AIC) is calculated using the formula:
-    
-    .. math::
-        \text{AIC} = 2k + n\log(\hat{\sigma}^2)
-    
-    where :math:`k` is the number of estimated parameters in the model, :math:`n` is the number of observations,
-    and :math:`\hat{\sigma}^2` is the estimated variance of the residuals. This criterion provides a measure of
-    the quality of the model, taking into account the goodness of fit and the complexity of the model.
+    The Akaike Information Criterion (AIC) is computed to assess the quality of the model, factoring
+    in both the goodness of fit and the model complexity. The AIC is calculated as 2k + n*log(sigma^2),
+    where k is the number of model parameters, n is the number of observations, and sigma^2 is the variance
+    of the residuals. If bootstrap is enabled, sigma^2 is estimated using the bootstrapped residuals, providing
+    a potentially more robust measure of model performance by incorporating variability from resampling.
     """
     
     papell_pipe = Pipeline([ 
@@ -269,34 +270,39 @@ def fit_model_(X: pd.DataFrame, y: pd.Series, alpha: float, bootstrap:False, n_b
 # %%
 def preprocess_data_(X: pd.DataFrame, y: pd.Series, lags: dict = {}) -> pd.DataFrame:
     """
-    Prepares the data for fitting the Papell model. This function is responsible for calculating the 
-    Change in Logarithm of the exchange rate in `y` and returns a pd.DataFrame with the data in the 
-    correct temporal window for model fitting. This function is designed as a preparatory step before 
-    performing grid search.
+    Prepares and transforms data for fitting a regression model, specifically designed for the Papell model,
+    by calculating the change in the logarithm of the dependent variable and applying specified lags to
+    explanatory variables. This function facilitates the alignment of data within the appropriate temporal window
+    for model fitting and is particularly useful before performing grid search optimization.
 
     Parameters
     ----------
     X : pd.DataFrame
-        A pandas DataFrame containing the explanatory variables.
+        The explanatory variables as a pandas DataFrame. These are the independent variables that will be used
+        in the model fitting process.
     y : pd.Series
-        A pandas Series containing the dependent variable, typically an exchange rate.
+        The dependent variable as a pandas Series, typically representing an exchange rate or a similar financial
+        time series that the model aims to predict.
     lags : dict, optional
-        A dictionary where keys are column names in `X` and values are the lag periods to apply. 
-        Default is an empty dictionary.
+        A dictionary specifying the lags to apply to the explanatory variables. Each key is a column name from `X`,
+        and each value is the number of periods to lag that variable by. Defaults to an empty dictionary, indicating
+        no lags will be applied unless specified.
 
     Returns
     -------
     pd.DataFrame
-        A pandas DataFrame containing the prepared data for model fitting. This includes the Change in 
-        Logarithm of `y` shifted by one period and any specified lags for variables in `X`. The resulting 
-        DataFrame is in the correct temporal window, with any rows containing NaN values due to lagging or 
-        differencing removed.
+        A DataFrame containing the prepared data for model fitting. This includes the calculated change in the logarithm
+        of `y`, shifted by one period to reflect future change (:math:`\Delta \log Y_{t+1}`), and any lagged versions of
+        the explanatory variables specified in the `lags` dictionary. The DataFrame is trimmed to ensure that no rows contain
+        NaN values, which might result from the lagging and differencing operations, thus aligning the dataset within the
+        correct temporal window for subsequent model fitting.
 
     Notes
     -----
-    This preprocessing includes calculating the Change in Logarithm of `y` for one period ahead, applying 
-    lagged transformations based on the `lags` dictionary to the explanatory variables, and ensuring the 
-    data is aligned in the correct temporal window by removing any resulting NaN values.
+    This function is a critical step in the data preparation process for time series modeling, particularly when the model
+    incorporates lags of both the dependent and independent variables. It automates the process of calculating the expected
+    future change in the dependent variable and adjusting the explanatory variables according to specified lags, thereby
+    creating a dataset that is ready for rigorous analysis and model fitting.
     """
     # Concatenate y and X, ensuring data is sorted by index
     data = pd.concat([y, X], axis=1).sort_index()
@@ -316,35 +322,37 @@ def preprocess_data_(X: pd.DataFrame, y: pd.Series, lags: dict = {}) -> pd.DataF
 # %%
 def nowcasting_(X: pd.DataFrame, y: pd.DataFrame, lags: dict) -> pd.DataFrame:
     """
-    Applies nowcasting to a DataFrame `X` based on specified lag values and nowcasting functions provided in `lags`.
-    This function preprocesses the data, applies nowcasting to the specified lagged variables, and returns a DataFrame
-    with the nowcasted variables, ready for further analysis or modeling.
+    Processes and nowcasts a given DataFrame using specified lags and corresponding nowcasting functions. This method
+    combines data preprocessing, including lagging of certain variables, with nowcasting to prepare the dataset for
+    further econometric analysis or forecasting applications.
 
     Parameters
     ----------
     X : pd.DataFrame
-        A pandas DataFrame containing the independent variables to be nowcasted.
+        Independent variables in a DataFrame format, which will undergo preprocessing and nowcasting.
     y : pd.DataFrame
-        A pandas DataFrame containing the dependent variable(s) used in preprocessing data.
+        Dependent variable(s) in a DataFrame format, used in the preprocessing step to ensure alignment and completeness of the dataset.
     lags : dict
-        A dictionary specifying the variables to lag and the nowcasting function to apply. The keys should be
-        the column names in `X` that need to be lagged, and the values should be dictionaries containing two keys:
-        'lag' for the number of periods to lag the variable, and 'nowcast' for the function to apply for nowcasting.
+        Specifies the variables for lagging and their corresponding nowcasting functions. Each entry in the dictionary
+        should have a variable name from `X` as a key, and its value should be another dictionary with 'lag' indicating
+        the number of periods to lag and 'nowcast' specifying the function for nowcasting that variable.
 
     Returns
     -------
     pd.DataFrame
-        A pandas DataFrame containing the preprocessed and nowcasted independent variables. Original lagged variables
-        are replaced with their nowcasted versions, and the DataFrame is cleaned of any NaN values resulting from
-        the nowcasting process.
+        The processed DataFrame containing the original and nowcasted variables, ready for analysis or modeling.
+        The output DataFrame excludes any originally lagged variables, replacing them with their nowcasted versions,
+        and ensures all rows with incomplete data due to lagging or nowcasting are removed.
 
     Notes
     -----
-    The `nowcasting_` function is designed to integrate preprocessing and nowcasting in a single step, streamlining
-    the preparation of time series data for econometric modeling or forecasting. This function assumes that the
-    preprocessing and nowcasting functions are defined externally and passed as arguments, allowing for flexible
-    adaptation to different nowcasting methodologies.
+    The nowcasting_ function facilitates the integration of preprocessing steps, such as lagging, with the application
+    of nowcasting techniques to selected variables. This streamlined approach allows for efficient preparation of
+    time-series data, catering to specific modeling needs or forecasting objectives. The function's design supports
+    flexible implementation of nowcasting methods, enabling its adaptation to various analytical frameworks and data
+    specifications.
     """
+
     X_pp = preprocess_data_(X, y, lags=lags)
     
     for key, value in lags.items():
@@ -363,37 +371,38 @@ def nowcasting_(X: pd.DataFrame, y: pd.DataFrame, lags: dict) -> pd.DataFrame:
 # %%
 def rolling_fit_model_(data: pd.DataFrame, alpha: float, h: int, outsample=False, bootstrap=False, n_boot=10_000) -> pd.DataFrame:
     """
-    Performs a rolling fit of a model over a dataset, using a specified alpha for regularization,
-    a rolling window of size h, and optionally conducts out-of-sample forecasting.
+    Performs a rolling fit of a model over a dataset with optional out-of-sample forecasting and bootstrap error analysis.
 
     Parameters
     ----------
     data : pd.DataFrame
-        The dataset to fit the model to, where the first column is the dependent variable
+        The dataset for model fitting, where the first column is the dependent variable,
         and the remaining columns are independent variables.
     alpha : float
-        The regularization strength used in the model fitting process.
+        The regularization strength for the Ridge regression model.
     h : int
-        The size of the rolling window over which to fit the model.
+        The window size for the rolling fit.
     outsample : bool, optional
-        If True, the model performs out-of-sample forecasting for 1 period ahead after each fit.
-        The default is False, indicating in-sample fitting without out-of-sample forecasting.
+        If True, performs out-of-sample forecasting one period ahead after each fit. Default is False.
+    bootstrap : bool, optional
+        If True, performs bootstrap error analysis on the forecasting error. Default is False.
+    n_boot : int, optional
+        The number of bootstrap samples for the error analysis if bootstrap is True. Default is 10,000.
 
     Returns
     -------
     pd.DataFrame
-        A DataFrame containing the results of the rolling fits, including the Akaike Information Criterion (AIC) values,
-        the fitted pipelines for each window, and optionally, the out-of-sample forecast errors if outsample is True.
+        A DataFrame containing results from the rolling fits, including AIC values, fitted model pipelines,
+        and, if outsample is True, out-of-sample forecast errors. If bootstrap is True and outsample is True,
+        it also returns bootstrap error analysis.
 
     Notes
     -----
-    This function iterates over the dataset, fitting a model to each rolling window of size `h` and optionally
-    performing an out-of-sample forecast for the next period. It computes the Akaike Information Criterion (AIC)
-    for each fit to assess model performance. For out-of-sample forecasting, it also computes the forecast error
-    for the one period ahead forecast. This approach allows for assessing the model's predictive accuracy and
-    performance over time, adjusting for changes in the data. The function returns a DataFrame with the AIC values,
-    fitted model pipelines, and forecast errors (if applicable), providing a comprehensive overview of the model's
-    rolling performance.
+    This function provides a framework for assessing model performance over time using a rolling window approach,
+    with the flexibility to incorporate out-of-sample forecasting and robust error analysis through bootstrapping.
+    It is particularly useful for time-series analysis where model stability and forecasting accuracy are of interest.
+    The returned DataFrame offers a detailed account of model fits, allowing for further analysis of model behavior
+    and prediction accuracy across different time periods.
     """
     if outsample:
         h_estimation = h
@@ -451,34 +460,39 @@ def rolling_fit_model_(data: pd.DataFrame, alpha: float, h: int, outsample=False
 # %%
 def rolling_aic_model_(data: pd.DataFrame, alpha: float, h: int, agg=np.mean, bootstrap=False, n_boot=10_000) -> float:
     """
-    Calculates the aggregated Akaike Information Criterion (AIC) over a rolling window fit of a model
-    to a dataset, using specified alpha for regularization, rolling window size, and aggregation function.
+    Aggregates the Akaike Information Criterion (AIC) values obtained from a series of rolling window fits of a model
+    across a dataset, optionally incorporating bootstrap methodology for error variance estimation.
 
     Parameters
     ----------
     data : pd.DataFrame
-        The dataset to fit the model to, where the first column is expected to be the dependent variable,
-        and the remaining columns are independent variables.
+        The dataset on which the model is fitted, with the first column as the dependent variable and
+        the subsequent columns as independent variables.
     alpha : float
-        The regularization strength used in the model fitting process.
+        The regularization strength for the model.
     h : int
-        The size of the rolling window over which the model is fitted.
-    agg : function, optional
-        An aggregation function (e.g., np.mean, np.median) to apply to the AIC values obtained from the
-        rolling window fits. The default is np.mean.
+        The size of the rolling window for model fitting.
+    agg : function
+        The aggregation function (e.g., np.mean, np.median) applied to the series of AIC values to obtain a single
+        summary statistic.
+    bootstrap : bool, optional
+        Indicates whether bootstrap methodology should be applied to estimate the error variance, affecting the
+        calculation of AIC values. Default is False.
+    n_boot : int, optional
+        The number of bootstrap samples to use if bootstrap is enabled. Default is 10,000.
 
     Returns
     -------
     float
-        The aggregated AIC value, calculated as specified by the `agg` function, across all rolling window fits.
+        The aggregated AIC value representing the overall quality of the model over the dataset, accounting for
+        both model fit and complexity, and adjusted for bootstrap analysis if specified.
 
     Notes
     -----
-    This function performs a rolling fit of a model over the provided dataset for each window of size `h`
-    and computes the AIC for each fit. It then aggregates these AIC values using the specified aggregation
-    function `agg` (e.g., mean, median). This approach provides a summary measure of the model's performance
-    over the dataset, taking into account both the goodness of fit and the complexity of the model, while
-    adjusting for changes in data over time.
+    This function leverages a rolling window approach to fit a model repeatedly over the dataset, each time computing
+    an AIC value to evaluate model performance. The aggregation of these AIC values provides a comprehensive measure
+    of the model's quality across the dataset. When bootstrap is enabled, it introduces a robustness check by re-sampling
+    the residuals to estimate error variance, potentially leading to a more accurate assessment of model performance.
     """
     if bootstrap:
         aic_values, _ = rolling_fit_model_(data, alpha, h, bootstrap=bootstrap, n_boot=n_boot)
@@ -487,8 +501,6 @@ def rolling_aic_model_(data: pd.DataFrame, alpha: float, h: int, agg=np.mean, bo
         aic_values = rolling_fit_model_(data, alpha, h, bootstrap=bootstrap, n_boot=n_boot)['aic']
     aggregated_aic = agg(aic_values.dropna())  # Ensure NaN values are excluded from aggregation
     return aggregated_aic
-# %%
-# %%
 # %%
 def rolling_msfe_model_(
         data: pd.DataFrame,
@@ -499,34 +511,42 @@ def rolling_msfe_model_(
         n_boot=10_000
     ) -> float:
     """
-    Calculates the aggregated Akaike Information Criterion (AIC) over a rolling window fit of a model
-    to a dataset, using specified alpha for regularization, rolling window size, and aggregation function.
+    Calculates the aggregated Mean Squared Forecast Error (MSFE) over a rolling window fit of a model
+    to a dataset, using specified alpha for regularization, rolling window size, aggregation function,
+    and optionally conducts bootstrap error analysis.
 
     Parameters
     ----------
     data : pd.DataFrame
-        The dataset to fit the model to, where the first column is expected to be the dependent variable,
+        The dataset for model fitting, where the first column is the dependent variable,
         and the remaining columns are independent variables.
     alpha : float
-        The regularization strength used in the model fitting process.
+        The regularization strength for the model fitting process.
     h : int
         The size of the rolling window over which the model is fitted.
-    agg : function, optional
-        An aggregation function (e.g., np.mean, np.median) to apply to the AIC values obtained from the
-        rolling window fits. The default is np.mean.
+    agg : function
+        An aggregation function, such as np.mean or np.median, to apply to the MSFE values
+        obtained from the rolling window fits.
+    bootstrap : bool, optional
+        If True, performs bootstrap error analysis on the forecast errors. Defaults to False.
+    n_boot : int, optional
+        The number of bootstrap samples to use for error analysis if bootstrap is True. Defaults to 10,000.
 
     Returns
     -------
     float
-        The aggregated AIC value, calculated as specified by the `agg` function, across all rolling window fits.
+        The aggregated MSFE value, calculated using the specified aggregation function across all rolling
+        window fits, adjusted for bootstrap analysis if specified.
 
     Notes
     -----
-    This function performs a rolling fit of a model over the provided dataset for each window of size `h`
-    and computes the AIC for each fit. It then aggregates these AIC values using the specified aggregation
-    function `agg` (e.g., mean, median). This approach provides a summary measure of the model's performance
-    over the dataset, taking into account both the goodness of fit and the complexity of the model, while
-    adjusting for changes in data over time.
+    This function performs a rolling fit of a model over the dataset for each window of size `h`,
+    optionally performing out-of-sample forecasting if `outsample` is True during the rolling fit process.
+    It computes the Mean Squared Forecast Error (MSFE) for each forecast to assess the model's predictive accuracy.
+    If `bootstrap` is True, it also performs a bootstrap error analysis on the forecast errors to provide
+    a more robust measure of forecasting accuracy. The aggregated MSFE provides a summary measure of the
+    model's forecasting performance over the dataset, considering both the fit quality and complexity of
+    the model, as well as adjusting for changes in data over time.
     """
     if bootstrap:
         _, msfe_values = rolling_fit_model_(data, alpha, h, outsample=True, bootstrap=bootstrap, n_boot=n_boot)
