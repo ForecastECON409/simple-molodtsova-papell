@@ -1,5 +1,17 @@
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     formats: py:percent,ipynb
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.16.1
+# ---
+
 # %% [markdown]
-"""
+r"""
 # Procedure for Evaluating the Simple Papell Model
 
 **Objective**: Adjust the hyperparameters of the proposed simple Papell model in order to maximize the model's accuracy.
@@ -14,7 +26,6 @@ For a set of parameters $(h, \lambda)$:
     - Nowcasting $\mathbb{E}_{t-1}[\tilde{\pi}_{t}]$.
     - Nowcasting $\mathbb{E}_{t-1}[y_{t}]$.
     - Nowcasting $\mathbb{E}_{t-2}[\tilde{y}_{t}]$.
-
 """
 # %%
 import matplotlib.pyplot as plt
@@ -125,8 +136,6 @@ msfe_values = pd.DataFrame(
         'msfe': msfe_values
     }
 )
-# %%
-
 # %%
 # Dataframe with AIC values and hyperparameters.
 aic_values = pd.DataFrame(
