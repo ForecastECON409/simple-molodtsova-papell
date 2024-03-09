@@ -450,10 +450,10 @@ def rolling_fit_model_(data: pd.DataFrame, alpha: float, h: int, outsample=False
             replace=True
         )
         return pd.DataFrame(results, index=dates_results), error_boostrap
-    elif bootstrap and all(pd.Series(results['error']).notna()):
+    elif bootstrap and all(pd.Series(results['error']).isna()):
         results = pd.DataFrame(results, index=dates_results)
         results = results.drop(columns='error')
-        return results, None
+        return results, 'No error to bootstrap'
                                                   
     return pd.DataFrame(results, index=dates_results)
 
