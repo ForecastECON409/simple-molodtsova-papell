@@ -205,7 +205,6 @@ def y_transform_(y: pd.Series) -> pd.Series:
     transformed_y = tz.pipe(y,
         lambda x: np.log(x),
         lambda x: x.diff(),
-        lambda x: x.shift(-1),
     )
     return transformed_y * 100
 # %%
