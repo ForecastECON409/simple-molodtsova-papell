@@ -176,3 +176,6 @@ ax.set_title('AIC Values')
 
 plt.show()
 # %%
+## Resultados
+
+![](img/msfe.png)
